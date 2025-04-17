@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/uptime-tracker
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-your-secret-key-here}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - API_KEY=${API_KEY:-your-api-key-for-cron-jobs}
+    depends_on:
+      - mongodb
+    networks:
+      - uptime-network
+
+  mongodb:
+    image: mongo:6
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - uptime-network
+
+  # Optional: Scheduled service checks
+  cron:
+    build:
+      context: .
+      dockerfile: Dockerfile.cron
+    restart: always
+    environment:
+      - API_URL=http://app:3000/api/cron/check
+      - API_KEY=${API_KEY:-your-api-key-for-cron-jobs}
+    depends_on:
+      - app
+    networks:
+      - uptime-network
+
+networks:
+  uptime-network:
+    driver: bridge
+
+volumes:
+  mongodb-data:

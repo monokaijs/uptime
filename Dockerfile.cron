@@ -1,0 +1,28 @@
+# Use a lightweight Alpine image with curl
+FROM alpine:3.18
+
+# Install curl and bash
+RUN apk add --no-cache curl bash
+
+# Create a directory for our script
+WORKDIR /app
+
+# Create the cron script
+RUN echo '#!/bin/bash\n\
+echo "Running service check at $(date)"\n\
+curl -s -X GET "${API_URL}?key=${API_KEY}" || echo "Failed to check services"\n\
+' > /app/check-services.sh
+
+# Make the script executable
+RUN chmod +x /app/check-services.sh
+
+# Create the crontab file
+RUN echo '*/5 * * * * /app/check-services.sh >> /var/log/cron.log 2>&1\n\
+# An empty line is required at the end of this file for a valid cron file\n\
+' > /etc/crontabs/root
+
+# Create log file
+RUN touch /var/log/cron.log
+
+# Run crond in the foreground
+CMD crond -f -l 2 & tail -f /var/log/cron.log
