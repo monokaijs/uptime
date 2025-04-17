@@ -6,10 +6,10 @@ import mongoose from "mongoose";
 // GET /api/services/[id]/status - Get status history for a service
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '500'); // Increased default limit for better history display
     const days = parseInt(searchParams.get('days') || '30'); // Default to 30 days of history

@@ -4,14 +4,13 @@ import { Service, ServiceStatus } from "@/models/Service";
 import { getServerSession } from "next-auth";
 import mongoose from "mongoose";
 
-// GET /api/services/[id] - Get a specific service
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
-    
+    const { id } = await params;
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: "Invalid service ID" },
@@ -21,14 +20,14 @@ export async function GET(
 
     await connectToDatabase();
     const service = await Service.findById(id);
-    
+
     if (!service) {
       return NextResponse.json(
         { error: "Service not found" },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json(service);
   } catch (error) {
     console.error("Error fetching service:", error);
@@ -42,7 +41,7 @@ export async function GET(
 // PUT /api/services/[id] - Update a service
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication
@@ -54,7 +53,7 @@ export async function PUT(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { name, url } = body;
 
@@ -88,14 +87,14 @@ export async function PUT(
       { name, url },
       { new: true, runValidators: true }
     );
-    
+
     if (!updatedService) {
       return NextResponse.json(
         { error: "Service not found" },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json(updatedService);
   } catch (error) {
     console.error("Error updating service:", error);
@@ -109,7 +108,7 @@ export async function PUT(
 // DELETE /api/services/[id] - Delete a service
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication
@@ -121,8 +120,8 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
-    
+    const { id } = await params;
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: "Invalid service ID" },
@@ -131,20 +130,20 @@ export async function DELETE(
     }
 
     await connectToDatabase();
-    
+
     // Delete the service
     const deletedService = await Service.findByIdAndDelete(id);
-    
+
     if (!deletedService) {
       return NextResponse.json(
         { error: "Service not found" },
         { status: 404 }
       );
     }
-    
+
     // Also delete all status records for this service
     await ServiceStatus.deleteMany({ serviceId: id });
-    
+
     return NextResponse.json({ message: "Service deleted successfully" });
   } catch (error) {
     console.error("Error deleting service:", error);

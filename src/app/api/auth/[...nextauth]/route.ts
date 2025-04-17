@@ -1,13 +1,12 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { compare } from "bcrypt";
 
 const handler = NextAuth({
   providers: [
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        password: { label: "Password", type: "password" },
+        password: {label: "Password", type: "password"},
       },
       async authorize(credentials) {
         if (!credentials?.password) {
@@ -16,7 +15,7 @@ const handler = NextAuth({
 
         // Compare with the admin password from environment variables
         const adminPassword = process.env.ADMIN_PASSWORD;
-        
+
         if (!adminPassword) {
           throw new Error("Admin password not configured");
         }
@@ -41,19 +40,19 @@ const handler = NextAuth({
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({token, user}) {
       if (user) {
         token.id = user.id;
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({session, token}) {
       if (session.user) {
-        session.user.id = token.id as string;
+        (session.user as any).id = token.id as string;
       }
       return session;
     },
   },
 });
 
-export { handler as GET, handler as POST };
+export {handler as GET, handler as POST};
